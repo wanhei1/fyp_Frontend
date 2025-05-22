@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { store } from "@/lib/store";
-
-// Backend API URL - update this to your backend server address
-const BACKEND_API_URL = "http://localhost:8478";
-
-// Set a reasonable direct upload size for Windows (much smaller to avoid buffer issues)
-const MAX_DIRECT_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB for direct upload on Windows
-// Set chunk size for large file uploads (smaller to avoid buffer overflows)
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks to avoid buffer issues
+import {
+  BACKEND_API_URL,
+  MAX_DIRECT_UPLOAD_SIZE,
+  CHUNK_SIZE,
+  API_REQUEST_TIMEOUT,
+} from "@/lib/config";
 
 export const config = {
   api: {
@@ -72,8 +70,8 @@ export async function POST(request: Request) {
       message: "Preparing to upload videos...",
     });
 
-    let jobId: string;
-    let statusMessage: string;
+    let jobId: string = "";
+    let statusMessage: string = "";
 
     // Use chunked upload for large files
     if (shouldUseChunkedUpload) {
@@ -174,7 +172,7 @@ export async function POST(request: Request) {
         }
 
         if (!jobId) {
-          throw new Error("Failed to complete upload process");
+          throw new Error("Failed to complete upload process - no job ID returned");
         }
 
         // 3. Update state to processing
@@ -234,7 +232,10 @@ export async function POST(request: Request) {
       batchFormData.append("num_workers", numWorkers as string);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        API_REQUEST_TIMEOUT
+      );
 
       try {
         const response = await fetch(`${BACKEND_API_URL}/process-videos/`, {

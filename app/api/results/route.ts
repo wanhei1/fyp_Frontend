@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-
-// Backend API URL - same as defined in process/route.ts
-const BACKEND_API_URL = "http://localhost:8478";
+import { BACKEND_API_URL } from "@/lib/config";
 
 export async function GET(request: Request) {
   try {
